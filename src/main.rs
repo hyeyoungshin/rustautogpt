@@ -92,6 +92,38 @@ async fn create_task(app_state: web::Data<AppState>, task: web::Json<Task>) -> i
     HttpResponse::Ok().finish()
 }
 
-fn main() {
-    println!("Hello, world!");
+#[actix_web::main] // to test create_task
+async fn main() -> std::io::Result<()> {
+    let db = match Database::load_from_file() {
+        Ok(db) => db,
+        Err(_) => Database::new(),
+    };
+
+    let data: web::Data<AppState> = web::Data::new(AppState { db: Mutex::new(db) });
+
+    // Create a web server
+    HttpServer::new(move || {
+        // (ownership) move into the new scope
+        App::new()
+            // 1. cross origin resource sharing:
+            //    we can make calls to our webserver from any ports or domain
+            .wrap(
+                Cors::permissive()
+                    .allowed_origin_fn(|origin, _req_head| {
+                        origin.as_bytes().starts_with(b"http://localhost") || origin == "null"
+                        // "b" as in bytes format
+                    })
+                    .allowed_methods(vec!["GET", "POST", "PUT", "DELETE"])
+                    .allowed_headers(vec![header::AUTHORIZATION, header::ACCEPT])
+                    .allowed_header(header::CONTENT_TYPE)
+                    .supports_credentials()
+                    .max_age(3600),
+            )
+            .app_data(data.clone()) // web::Data is a Smart Pointer which provides shared thread safe access to data (not an expensive op)
+            // 2. Write REST API endpoints
+            .route("/task", web::post().to(create_task))
+    })
+    .bind("127.0.0.1:8080")?
+    .run()
+    .await
 }
