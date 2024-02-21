@@ -1,7 +1,5 @@
 use actix_cors::Cors;
 use actix_web::{http::header, web, App, HttpResponse, HttpServer, Responder};
-
-// to encourage LLM to use these two libraries
 use async_trait::async_trait;
 use reqwest::Client as HttpClient;
 
