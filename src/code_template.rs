@@ -69,7 +69,7 @@ impl Database {
 
     // DATABASE Functions
     fn save_to_file(&self) -> std::io::Result<()> {
-        let data = serde_json::to_string(&self)?; // because of the output type ? here is appropriate
+        let data = serde_json::to_string(&self)?; // ? tests if to_string succeeded 
         let mut file = fs::File::create("database.json")?;
         file.write_all(data.as_bytes())?;
         Ok(())
@@ -83,12 +83,12 @@ impl Database {
 }
 
 struct AppState {
-    db: Mutex<Database>, // Being shared
+    db: Mutex<Database>, // Being shared by multiple users
 }
 
 async fn create_task(app_state: web::Data<AppState>, task: web::Json<Task>) -> impl Responder {
-    let mut db = app_state.db.lock().unwrap();
-    db.insert(task.into_inner()); // extract Task out of Jason<Task>
+    let mut db = app_state.db.lock().unwrap(); // alternative to `unwrap`: `expect("fail to lock database")``
+    db.insert(task.into_inner()); // `into_inner``: extract Task out of Jason<Task>
     let _ = db.save_to_file();
     HttpResponse::Ok().finish()
 }
