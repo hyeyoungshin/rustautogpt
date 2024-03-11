@@ -1,7 +1,6 @@
 use actix_cors::Cors;
 use actix_web::{http::header, web, App, HttpResponse, HttpServer, Responder};
 
-// to encourage LLM to use these two libraries
 use async_trait::async_trait;
 use reqwest::Client as HttpClient;
 
@@ -149,17 +148,12 @@ async fn main() -> std::io::Result<()> {
 
     let data: web::Data<AppState> = web::Data::new(AppState { db: Mutex::new(db) });
 
-    // Create a web server
     HttpServer::new(move || {
-        // (ownership) move into the new scope
         App::new()
-            // 1. cross origin resource sharing:
-            //    we can make calls to our webserver from any ports or domain
             .wrap(
                 Cors::permissive()
                     .allowed_origin_fn(|origin, _req_head| {
                         origin.as_bytes().starts_with(b"http://localhost") || origin == "null"
-                        // "b" as in bytes format
                     })
                     .allowed_methods(vec!["GET", "POST", "PUT", "DELETE"])
                     .allowed_headers(vec![header::AUTHORIZATION, header::ACCEPT])
@@ -167,8 +161,7 @@ async fn main() -> std::io::Result<()> {
                     .supports_credentials()
                     .max_age(3600),
             )
-            .app_data(data.clone()) // web::Data is a Smart Pointer which provides shared thread safe access to data (not an expensive op)
-            // 2. Write REST API endpoints
+            .app_data(data.clone())
             .route("/task", web::post().to(create_task))
             .route("/task", web::get().to(read_all_tasks))
             .route("/task", web::put().to(update_task))
@@ -182,4 +175,3 @@ async fn main() -> std::io::Result<()> {
     .run()
     .await
 }
-
