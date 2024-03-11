@@ -1,6 +1,9 @@
 use actix_cors::Cors;
+
 use actix_web::{http::header, web, App, HttpResponse, HttpServer, Responder};
+
 use async_trait::async_trait;
+
 use reqwest::Client as HttpClient;
 
 use serde::{Deserialize, Serialize};
@@ -138,14 +141,16 @@ async fn login(app_state: web::Data<AppState>, user: web::Json<User>) -> impl Re
     }
 }
 
-#[actix_web::main] // to test create_task
+#[actix_web::main] // to test `create_task`
 async fn main() -> std::io::Result<()> {
     let db = match Database::load_from_file() {
         Ok(db) => db,
         Err(_) => Database::new(),
     };
 
-    let data: web::Data<AppState> = web::Data::new(AppState { db: Mutex::new(db) });
+    let data: web::Data<AppState> = web::Data::new(AppState { 
+        db: Mutex::new(db) 
+    });
 
     // Create a web server
     HttpServer::new(move || {
@@ -157,7 +162,7 @@ async fn main() -> std::io::Result<()> {
                 Cors::permissive()
                     .allowed_origin_fn(|origin, _req_head| {
                         origin.as_bytes().starts_with(b"http://localhost") || origin == "null"
-                        // "b" as in bytes format
+                        // `b` converts to bytes
                     })
                     .allowed_methods(vec!["GET", "POST", "PUT", "DELETE"])
                     .allowed_headers(vec![header::AUTHORIZATION, header::ACCEPT])
